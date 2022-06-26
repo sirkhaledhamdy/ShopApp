@@ -1,40 +1,63 @@
-abstract class NewsStates {}
 
-class NewsInitialState extends NewsStates{}
+import 'package:news_flutter/models/profile_model.dart';
 
-class NewsBottomNavState extends NewsStates{}
+import '../models/change_favourite_model.dart';
 
-class NewsGetBusinessSuccessState extends NewsStates{}
+abstract class ShopStates {}
 
-class NewsGetBusinessErrorState extends NewsStates {
-  final String error;
-  NewsGetBusinessErrorState(this.error);
+class ShopInitialState extends ShopStates{}
+
+class ShopBottomNavState extends ShopStates{}
+
+class ShopLoadingHomeDataState extends ShopStates{}
+
+class ShopSuccessHomeDataState extends ShopStates{}
+
+class ShopErrorHomeDataState extends ShopStates{}
+
+class ShopSuccessCategoryDataState extends ShopStates{}
+
+class ShopErrorCategoryDataState extends ShopStates{}
+
+class ShopSuccessFavouriteDataState extends ShopStates{
+
+  final FavouriteModel model;
+
+  ShopSuccessFavouriteDataState(this.model);
 }
-class NewsGetBusinessLoadingState extends NewsStates{}
 
-class NewsGetSportsSuccessState extends NewsStates{}
+class ShopSuccessFavouriteDListenerState extends ShopStates{}
 
-class NewsGetSportsErrorState extends NewsStates {
-  final String error;
-  NewsGetSportsErrorState(this.error);
+class ShopErrorFavouriteDataState extends ShopStates{}
+
+class ShopLoadingAddFavouriteDataState extends ShopStates{}
+
+class ShopSuccessAddFavouriteDataState extends ShopStates{
 }
-class NewsGetSportsLoadingState extends NewsStates{}
 
-class NewsGetScienceSuccessState extends NewsStates{}
+class ShopErrorAddFavouriteDataState extends ShopStates{}
 
-class NewsGetScienceErrorState extends NewsStates {
-  final String error;
-  NewsGetScienceErrorState(this.error);
+class ShopLoadingAddProfileDataState extends ShopStates{}
+
+class ShopSuccessAddProfileDataState extends ShopStates
+{
+  final ProfileModel ? userModel;
+
+  ShopSuccessAddProfileDataState(this.userModel);
 }
-class NewsGetScienceLoadingState extends NewsStates{}
 
-class NewsGetSearchSuccessState extends NewsStates{}
+class ShopErrorAddProfileDataState extends ShopStates{}
 
-class NewsGetSearchErrorState extends NewsStates {
-  final String error;
-  NewsGetSearchErrorState(this.error);
+class ShopLoadingUpdateProfileDataState extends ShopStates{}
+
+class ShopSuccessUpdateProfileDataState extends ShopStates
+{
+  final ProfileModel ? userModel;
+
+  ShopSuccessUpdateProfileDataState(this.userModel);
 }
-class NewsGetSearchLoadingState extends NewsStates{}
+
+class ShopErrorUpdateProfileDataState extends ShopStates{}
 
 
 

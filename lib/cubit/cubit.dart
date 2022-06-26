@@ -1,139 +1,225 @@
 import 'package:flutter/material.dart';
 import 'package:news_flutter/cubit/states.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:news_flutter/modules/business/business_screen.dart';
-import 'package:news_flutter/modules/sports/sports_screen.dart';
+import 'package:news_flutter/models/categories_model.dart';
+import 'package:news_flutter/models/home_model.dart';
+import 'package:news_flutter/modules/categories/shop_categories_screen.dart';
+import 'package:news_flutter/modules/shop_app/favourite/shop_favourite_screen.dart';
+import 'package:news_flutter/modules/shop_app/products/shop_products_screen.dart';
+import 'package:news_flutter/modules/shop_app/settings/shop_settings_screen.dart';
+import 'package:news_flutter/network/end_points/end_points.dart';
+import 'package:news_flutter/network/remote/dio_helper.dart';
 
-import '../modules/science/science_screen.dart';
-import '../network/remote/dio_helper.dart';
+import '../constants/constants.dart';
+import '../models/change_favourite_model.dart';
+import '../models/add_favourite_model.dart';
+import '../models/profile_model.dart';
 
-class NewsCubit extends Cubit<NewsStates> {
-  NewsCubit() : super(NewsInitialState());
+class ShopCubit extends Cubit<ShopStates> {
+  ShopCubit() : super(ShopInitialState());
 
-  static NewsCubit get(context) => BlocProvider.of(context);
+  static ShopCubit get(context) => BlocProvider.of(context);
 
   int currentIndex = 0;
+
   List<Widget> screens = [
-    BusinessScreen(),
-    SportsScreen(),
-    SienceScreen(),
+    ShopProductScreen(),
+    ShopCategoriesScreen(),
+    ShopFavouriteScreen(),
+    ShopSettingsScreen(),
   ];
+
+  void changeBottom(int index) {
+    currentIndex = index;
+    emit(ShopBottomNavState());
+  }
+
   List<BottomNavigationBarItem> bottomItems = [
     BottomNavigationBarItem(
       icon: Icon(
-        Icons.business_center,
+        Icons.home,
       ),
-      label: 'Business',
-
+      label: 'Products',
     ),
     BottomNavigationBarItem(
       icon: Icon(
-        Icons.sports_soccer,
+        Icons.favorite,
       ),
-      label: 'Sports',
-
+      label: 'Favorites',
     ),
     BottomNavigationBarItem(
       icon: Icon(
-        Icons.science_outlined,
+        Icons.settings,
       ),
-      label: 'Science',
+      label: 'Settings',
     ),
-
   ];
 
-  void changeBottomNavBar(int index){
-    currentIndex = index;
+  HomeModel? homeData;
+  Map<int?, bool?> favourites = {};
 
-    emit(NewsBottomNavState());
-  }
-
-  List<dynamic> business = [];
-
-  void getBusiness(){
-      emit(NewsGetBusinessLoadingState());
-      DioHelper.getData(url: 'v2/top-headlines', query: {
-        'country':'eg',
-        'category':'business',
-        'apiKey':'f8fcf96ebefa4fbfa62ef46fc85c3aaa',
-      }).then((value) {
-        business = value?.data['articles'];
-        print(business.length);
-        emit(NewsGetBusinessSuccessState());
-      }).catchError((error){
-        print(error);
-        emit(NewsGetBusinessErrorState(error));
-      });
-  }
-
-  List<dynamic> sports = [];
-
-  void getSports(){
-    if(sports.isEmpty){
-      emit(NewsGetSportsLoadingState());
-      DioHelper.getData(url: 'v2/top-headlines', query: {
-        'country':'eg',
-        'category':'sports',
-        'apiKey':'f8fcf96ebefa4fbfa62ef46fc85c3aaa',
-      }).then((value) {
-        sports = value?.data['articles'];
-        print(sports.length);
-        emit(NewsGetSportsSuccessState());
-      }).catchError((error){
-        print(error);
-        emit(NewsGetSportsErrorState(error));
-      });
-    } else{
-      emit(NewsGetSportsSuccessState());
-    }
-  }
-  List<dynamic> science = [];
-
-  void getScience(){
-    if(science.isEmpty){
-      emit(NewsGetScienceLoadingState());
-      DioHelper.getData(url: 'v2/top-headlines', query: {
-        'country':'eg',
-        'category':'science',
-        'apiKey':'f8fcf96ebefa4fbfa62ef46fc85c3aaa',
-      }).then((value) {
-        science = value?.data['articles'];
-        print(science.length);
-        emit(NewsGetScienceSuccessState());
-      }).catchError((error){
-        print(error);
-        emit(NewsGetScienceErrorState(error));
-      });
-    } else{
-      emit(NewsGetScienceSuccessState());
-    }
-  }
-
-
-  List<dynamic> search = [];
-
-  void getSearch(String value)
-
-  {
-    emit(NewsGetSearchLoadingState());
+  void getHomeData() {
+    emit(ShopLoadingHomeDataState());
 
     DioHelper.getData(
-        url: 'v2/everything',
-        query:
-        {
-      'q':'$value',
-      'apiKey':'f8fcf96ebefa4fbfa62ef46fc85c3aaa',
-    }).then((value) {
-      search = value?.data['articles'];
-      print(search.length);
-      emit(NewsGetSearchSuccessState());
-    }).catchError((error){
-      print(error);
-      emit(NewsGetSearchErrorState(error));
+      token: token,
+      url: HOME,
+    ).then((value)
+    {
+      homeData = HomeModel.fromJson(value!.data);
+      print(homeData?.status);
+      homeData!.data!.products.forEach((element)
+      {
+      favourites.addAll({
+        element.id : element.inFavorites
+      });
+      });
+
+      emit(ShopSuccessHomeDataState());
+    }).catchError((error) {
+      print(error.toString());
+      emit(ShopErrorHomeDataState());
     });
   }
 
 
 
+  CategoriesModel? categoriesModel;
 
+  void getCategoryData()
+  {
+    DioHelper.getData(
+      lang: 'en',
+      url: GET_CATEGORIES,
+    ).then((value)
+    {
+      categoriesModel = CategoriesModel.fromJson(value!.data);
+
+      emit(ShopSuccessCategoryDataState());
+    }).catchError((error) {
+      print(error.toString());
+      emit(ShopErrorCategoryDataState());
+    });
+  }
+
+
+  FavouriteModel? favouriteModel;
+
+  void postFavouriteData(int? productId)
+  {
+    if(favourites[productId] == true) {
+      favourites[productId] = false ;
+    }else{
+      favourites[productId] = true ;
+    }
+    emit(ShopSuccessFavouriteDListenerState());
+print(favourites[productId]);
+    DioHelper.postData(
+      lang: 'en',
+      url: GET_FAVOURITE,
+      data: {
+        'product_id' : productId
+      },
+      token: token,
+    ).then((value)
+    {
+      favouriteModel = FavouriteModel.fromJson(value!.data);
+
+      if(favouriteModel!.status == false )
+      {
+        if(favourites[productId] == true) {
+          favourites[productId] = false ;
+        }else{
+          favourites[productId] = true ;
+        }
+      }else{
+        getFavouriteData();
+      }
+      emit(ShopSuccessFavouriteDataState(favouriteModel!));
+    }).catchError((error) {
+      if(favourites[productId] == true) {
+        favourites[productId] = false ;
+      }else{
+        favourites[productId] = true ;
+      }
+      print(error.toString());
+      emit(ShopErrorFavouriteDataState());
+    });
+  }
+
+  FavouritesAddModel? favouritesAddModel;
+
+  void getFavouriteData()
+  {
+    emit(ShopLoadingAddFavouriteDataState());
+
+    DioHelper.getData(
+      lang: 'en',
+      url: GET_FAVOURITE,
+      token: token,
+    ).then((value)
+    {
+      favouritesAddModel = FavouritesAddModel.fromJson(value!.data);
+      emit(ShopSuccessAddFavouriteDataState());
+    }).catchError((error) {
+      print(error.toString());
+      emit(ShopErrorAddFavouriteDataState());
+    });
+
+
+  }
+
+
+  ProfileModel? profileModel;
+
+  void getProfileData()
+  {
+    emit(ShopLoadingAddProfileDataState());
+
+    DioHelper.getData(
+      lang: 'en',
+      url: GET_PROFILE,
+      token: token,
+    ).then((value)
+    {
+      profileModel = ProfileModel.fromJson(value!.data);
+      print(profileModel!.data!.name);
+      emit(ShopSuccessAddProfileDataState(profileModel));
+    }).catchError((error) {
+      print(error.toString());
+      emit(ShopErrorAddProfileDataState());
+    });
+
+
+  }
+
+
+  void updateProfileData({
+    @required String? name,
+    @required String? email,
+    @required String? phone,
+})
+  {
+    emit(ShopLoadingUpdateProfileDataState());
+
+    DioHelper.putData(
+      data: {
+        'name':name,
+        'email':email,
+        'phone':phone,
+      },
+      lang: 'en',
+      url: UPDATE_PROFILE,
+      token: token,
+    ).then((value)
+    {
+      profileModel = ProfileModel.fromJson(value!.data);
+      emit(ShopSuccessUpdateProfileDataState(profileModel));
+    }).catchError((error) {
+      print(error.toString());
+      emit(ShopErrorUpdateProfileDataState());
+    });
+
+
+  }
 }

@@ -1,8 +1,7 @@
-import 'package:news_flutter/cubit/states.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:news_flutter/network/local/cache_helper.dart';
 
-import 'appstates.dart';
+import 'appStates.dart';
 
 
 class AppCubit extends Cubit<AppStates> {
